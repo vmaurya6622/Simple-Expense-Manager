@@ -30,7 +30,7 @@ public class UserMenu {
             try {
                 choice = Integer.parseInt(scanner.nextLine().trim());
             } catch (NumberFormatException e) {
-                System.out.println("Invalid input! Please enter a number.");
+                System.out.println("Invalid input! Please enter specified numbers only.");
                 continue;
             }
 
@@ -52,7 +52,7 @@ public class UserMenu {
                     System.exit(0);
                     return null;
                 default:
-                    System.out.println("Invalid choice! Please try again.");
+                    System.out.println("Invalid choice! Please Enter Correct Choice.");
             }
         }
     }

@@ -49,8 +49,8 @@ public class User implements Validatable {
         if (username == null || username.trim().isEmpty()) {
             throw new ValidationException("Username cannot be empty");
         }
-        if (username.length() < 3) {
-            throw new ValidationException("Username must be at least 3 characters long");
+        if (username.trim().length() < 1) {
+            throw new ValidationException("Username must be at least 1 character long");
         }
         if (!username.matches("^[a-zA-Z0-9_]+$")) {
             throw new ValidationException("Username can only contain letters, numbers, and underscores");
@@ -59,8 +59,16 @@ public class User implements Validatable {
         if (password == null || password.trim().isEmpty()) {
             throw new ValidationException("Password cannot be empty");
         }
-        if (password.length() < 4) {
-            throw new ValidationException("Password must be at least 4 characters long");
+        if (password.length() < 8) {
+            throw new ValidationException("Password must be at least 8 characters long");
+        }
+        // Check for at least one uppercase letter
+        if (!password.matches(".*[A-Z].*")) {
+            throw new ValidationException("Password must contain at least one uppercase letter");
+        }
+        // Check for at least one special character
+        if (!password.matches(".*[!@#$%^&*()_+\\-=\\[\\]{};':\"\\\\|,.<>/?].*")) {
+            throw new ValidationException("Password must contain at least one special character");
         }
         
         if (csvId == null || csvId.trim().isEmpty()) {

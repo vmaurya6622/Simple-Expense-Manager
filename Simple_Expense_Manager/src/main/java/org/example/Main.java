@@ -16,7 +16,7 @@ public class Main {
         ExpenseFileService expenseFileService = new ExpenseFileService();
 
         System.out.println("========================================");
-        System.out.println("  EXPENSE MANAGEMENT SYSTEM");
+        System.out.println("    EXPENSE MANAGEMENT SYSTEM   ");
         System.out.println("========================================");
 
         while (true) {
