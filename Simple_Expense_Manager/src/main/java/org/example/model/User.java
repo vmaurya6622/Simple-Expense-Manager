@@ -35,7 +35,7 @@ public class User implements Validatable {
     }
 
     @Override
-    public void validate() throws ValidationException {
+    public void validate() throws ValidationException { //this is for validating the user input credentials
         if (name == null || name.trim().isEmpty()) {
             throw new ValidationException("Name cannot be empty");
         }
@@ -75,7 +75,7 @@ public class User implements Validatable {
             throw new ValidationException("CSV ID cannot be empty");
         }
     }
-
+    //getters and setters for the user input credentials
     public String getName() {
         return name;
     }

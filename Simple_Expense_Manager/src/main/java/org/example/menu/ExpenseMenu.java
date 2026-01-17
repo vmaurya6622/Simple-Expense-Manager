@@ -35,7 +35,7 @@ public class ExpenseMenu {
             System.out.println("5. View Expenses by Date");
             System.out.println("6. Export Expenses to File");
             System.out.println("7. View Summary");
-            System.out.println("8. Exit");
+            System.out.println("8. Logout");
             System.out.print("Enter your choice: ");
 
             int choice = 0;
@@ -83,6 +83,7 @@ public class ExpenseMenu {
         System.out.println("1. Food");
         System.out.println("2. Travel");
         System.out.println("3. Electricity");
+        System.out.println("4. Miscellaneous");
         System.out.print("Enter category choice: ");
 
         try {
@@ -96,24 +97,27 @@ public class ExpenseMenu {
                 amountInput = amountInput.substring(1).trim();
             }
             double amount = Double.parseDouble(amountInput);
-            
-            System.out.print("Enter description: ");
-            String description = scanner.nextLine().trim();
 
+            String category = "";
             switch (categoryChoice) {
                 case 1:
-                    expense = createFoodExpense(amount, description);
+                    category = "Food";
                     break;
                 case 2:
-                    expense = createTravelExpense(amount, description);
+                    category = "Travel";
                     break;
                 case 3:
-                    expense = createElectricityExpense(amount, description);
+                    category = "Electricity";
+                    break;
+                case 4:
+                    category = "Miscellaneous";
                     break;
                 default:
                     System.out.println("Invalid category choice!");
                     return;
             }
+            
+            expense = createSimpleExpense(category, amount);
 
             if (expense != null) {
                 expenseRepository.addExpense(expense);
@@ -127,46 +131,8 @@ public class ExpenseMenu {
         }
     }
 
-    private Expense createFoodExpense(double amount, String description) throws ValidationException {
-        System.out.print("Enter restaurant name: ");
-        String restaurantName = scanner.nextLine().trim();
-        if (restaurantName.isEmpty()) {
-            throw new ValidationException("Restaurant name cannot be empty");
-        }
-        
-        System.out.print("Enter meal type (Breakfast/Lunch/Dinner/Snacks): ");
-        String mealType = scanner.nextLine().trim();
-        if (mealType.isEmpty()) {
-            throw new ValidationException("Meal type cannot be empty");
-        }
-        
-        return new FoodExpense(currentUser.getUserId(), amount, description, restaurantName, mealType);
-    }
-
-    private Expense createTravelExpense(double amount, String description) throws ValidationException {
-        System.out.print("Enter mode of transport (Car/Bus/Train/Flight/Taxi): ");
-        String modeOfTransport = scanner.nextLine().trim();
-        
-        System.out.print("Enter destination: ");
-        String destination = scanner.nextLine().trim();
-        
-        System.out.print("Enter distance (km): ");
-        double distance = Double.parseDouble(scanner.nextLine().trim());
-        
-        return new TravelExpense(currentUser.getUserId(), amount, description, modeOfTransport, destination, distance);
-    }
-
-    private Expense createElectricityExpense(double amount, String description) throws ValidationException {
-        System.out.print("Enter bill number: ");
-        String billNumber = scanner.nextLine().trim();
-        
-        System.out.print("Enter units consumed (kWh): ");
-        double unitsConsumed = Double.parseDouble(scanner.nextLine().trim());
-        
-        System.out.print("Enter provider name: ");
-        String provider = scanner.nextLine().trim();
-        
-        return new ElectricityExpense(currentUser.getUserId(), amount, description, billNumber, unitsConsumed, provider);
+    private Expense createSimpleExpense(String category, double amount) throws ValidationException {
+        return new org.example.model.SimpleExpense(currentUser.getUserId(), category, amount, "");
     }
 
     private void handleUpdateExpense() {
@@ -190,26 +156,19 @@ public class ExpenseMenu {
             String amountInput = scanner.nextLine().trim();
             double amount = amountInput.isEmpty() ? existingExpense.getAmount() : Double.parseDouble(amountInput);
 
-            System.out.print("Enter new description (press Enter to keep current): ");
-            String description = scanner.nextLine().trim();
-            if (description.isEmpty()) {
-                description = existingExpense.getDescription();
-            }
+            // Create updated expense with same category but new amount (description is always empty)
+            Expense updatedExpense = new org.example.model.SimpleExpense(
+                    existingExpense.getExpenseId(),
+                    existingExpense.getUserId(),
+                    existingExpense.getCategory(),
+                    amount,
+                    existingExpense.getDateTime(),
+                    ""
+            );
 
-            Expense updatedExpense = null;
-            if (existingExpense instanceof FoodExpense) {
-                updatedExpense = updateFoodExpense((FoodExpense) existingExpense, amount, description);
-            } else if (existingExpense instanceof TravelExpense) {
-                updatedExpense = updateTravelExpense((TravelExpense) existingExpense, amount, description);
-            } else if (existingExpense instanceof ElectricityExpense) {
-                updatedExpense = updateElectricityExpense((ElectricityExpense) existingExpense, amount, description);
-            }
-
-            if (updatedExpense != null) {
-                expenseRepository.updateExpense(expenseId, updatedExpense);
-                System.out.println("Expense updated successfully!");
-                System.out.println(updatedExpense.toFormattedString());
-            }
+            expenseRepository.updateExpense(expenseId, updatedExpense);
+            System.out.println("Expense updated successfully!");
+            System.out.println(updatedExpense.toFormattedString());
         } catch (ExpenseNotFoundException | IOException e) {
             System.out.println("Error: " + e.getMessage());
         } catch (NumberFormatException e) {
@@ -219,23 +178,6 @@ public class ExpenseMenu {
         }
     }
 
-    private Expense updateFoodExpense(FoodExpense foodExpense, double amount, String description) throws ValidationException {
-        return new FoodExpense(foodExpense.getExpenseId(), foodExpense.getUserId(), 
-                amount, description, foodExpense.getDateTime(), 
-                foodExpense.getRestaurantName(), foodExpense.getMealType());
-    }
-
-    private Expense updateTravelExpense(TravelExpense travelExpense, double amount, String description) throws ValidationException {
-        return new TravelExpense(travelExpense.getExpenseId(), travelExpense.getUserId(), 
-                amount, description, travelExpense.getDateTime(), 
-                travelExpense.getModeOfTransport(), travelExpense.getDestination(), travelExpense.getDistance());
-    }
-
-    private Expense updateElectricityExpense(ElectricityExpense electricityExpense, double amount, String description) throws ValidationException {
-        return new ElectricityExpense(electricityExpense.getExpenseId(), electricityExpense.getUserId(), 
-                amount, description, electricityExpense.getDateTime(), 
-                electricityExpense.getBillNumber(), electricityExpense.getUnitsConsumed(), electricityExpense.getProvider());
-    }
 
     private void handleViewAllExpenses() {
         System.out.println("\n--- ALL EXPENSES ---");
@@ -252,25 +194,46 @@ public class ExpenseMenu {
 
     private void handleViewExpensesByCategory() {
         System.out.println("\n--- EXPENSES BY CATEGORY ---");
-        List<String> categories = expenseRepository.getAvailableCategories();
-        
-        if (categories.isEmpty()) {
-            System.out.println("No expenses found. No categories available.");
-            return;
-        }
+        System.out.println("Select category:");
+        System.out.println("1. Food");
+        System.out.println("2. Travel");
+        System.out.println("3. Electricity");
+        System.out.println("4. Miscellaneous");
+        System.out.print("Enter category choice (1-4): ");
 
-        System.out.println("Available categories: " + String.join(", ", categories));
-        System.out.print("Enter category name: ");
-        String category = scanner.nextLine().trim();
+        try {
+            int categoryChoice = Integer.parseInt(scanner.nextLine().trim());
+            String category = "";
 
-        List<Expense> expenses = expenseRepository.getExpensesByCategory(category);
-        
-        if (expenses.isEmpty()) {
-            System.out.println("No expenses found for category: " + category);
-        } else {
-            expenses.forEach(expense -> System.out.println(expense.toFormattedString()));
-            double total = expenseRepository.getTotalExpensesByCategory(category);
-            System.out.println("\nTotal for " + category + ": $" + String.format("%.2f", total));
+            switch (categoryChoice) {
+                case 1:
+                    category = "Food";
+                    break;
+                case 2:
+                    category = "Travel";
+                    break;
+                case 3:
+                    category = "Electricity";
+                    break;
+                case 4:
+                    category = "Miscellaneous";
+                    break;
+                default:
+                    System.out.println("Invalid category choice! Please enter a number between 1 and 4.");
+                    return;
+            }
+
+            List<Expense> expenses = expenseRepository.getExpensesByCategory(category);
+            
+            if (expenses.isEmpty()) {
+                System.out.println("No expenses found for category: " + category);
+            } else {
+                expenses.forEach(expense -> System.out.println(expense.toFormattedString()));
+                double total = expenseRepository.getTotalExpensesByCategory(category);
+                System.out.println("\nTotal for " + category + ": $" + String.format("%.2f", total));
+            }
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid input! Please enter a number between 1 and 4.");
         }
     }
 
@@ -314,7 +277,7 @@ public class ExpenseMenu {
                 return;
             }
 
-            writer.write("ExpenseID,UserID,Category,Amount,DateTime,Description,AdditionalInfo\n");
+            writer.write("ExpenseID,UserID,Category,Amount,DateTime\n");
             for (Expense expense : expenses) {
                 writer.write(expense.toCSV() + "\n");
             }

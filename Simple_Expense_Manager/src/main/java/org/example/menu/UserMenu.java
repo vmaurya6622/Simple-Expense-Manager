@@ -43,7 +43,7 @@ public class UserMenu {
                     break;
                 case 2:
                     User loggedInUser = handleLogin();
-                    if (loggedInUser != null) {
+                    if (loggedInUser != null) { //singleton user pattern
                         return loggedInUser;
                     }
                     break;

@@ -21,7 +21,7 @@ public abstract class Expense implements Validatable, Exportable {
         this.category = category;
         this.amount = amount;
         this.dateTime = LocalDateTime.now();
-        this.description = description;
+        this.description = (description == null) ? "" : description;
         validate();
     }
 
@@ -31,7 +31,7 @@ public abstract class Expense implements Validatable, Exportable {
         this.category = category;
         this.amount = amount;
         this.dateTime = dateTime;
-        this.description = description;
+        this.description = (description == null) ? "" : description;
         validate();
     }
 
@@ -53,26 +53,23 @@ public abstract class Expense implements Validatable, Exportable {
         if (amount > 1000000) {
             throw new ValidationException("Amount cannot exceed 1,000,000");
         }
-        if (description == null || description.trim().isEmpty()) {
-            throw new ValidationException("Description cannot be empty");
-        }
-        if (description.length() > 500) {
-            throw new ValidationException("Description cannot exceed 500 characters");
+        // Description is optional (always empty for new expenses, kept for backward compatibility)
+        if (description == null) {
+            description = "";
         }
     }
 
     @Override
     public String toCSV() {
-        return String.format("%s,%s,%s,%.2f,%s,%s",
+        return String.format("%s,%s,%s,%.2f,%s",
                 expenseId, userId, category, amount, 
-                dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), 
-                description);
+                dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
 
     @Override
     public String toFormattedString() {
-        return String.format("Expense ID: %s | Category: %s | Amount: $%.2f | Date: %s | Description: %s",
-                expenseId, category, amount, dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), description);
+        return String.format("Expense ID: %s | Category: %s | Amount: $%.2f | Date: %s",
+                expenseId, category, amount, dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
     }
 
     // Getters and Setters
@@ -105,14 +102,6 @@ public abstract class Expense implements Validatable, Exportable {
         this.dateTime = dateTime;
     }
 
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) throws ValidationException {
-        this.description = description;
-        validate();
-    }
 
     @Override
     public boolean equals(Object o) {

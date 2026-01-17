@@ -35,7 +35,7 @@ public class ExpenseFileService {
             
             // Write header if file is new
             if (!fileExists) {
-                bw.write("ExpenseID,UserID,Category,Amount,DateTime,Description,AdditionalInfo");
+                bw.write("ExpenseID,UserID,Category,Amount,DateTime");
                 bw.newLine();
             }
             
@@ -76,35 +76,18 @@ public class ExpenseFileService {
 
     private Expense parseExpenseFromCsv(String csvLine, String userId) throws ValidationException {
         String[] parts = csvLine.split(",", -1);
-        if (parts.length < 6) return null;
+        // Support both old format (6+ columns with description) and new format (5 columns)
+        if (parts.length < 5) return null;
 
         String expenseId = parts[0];
         String category = parts[2];
         double amount = Double.parseDouble(parts[3]);
         LocalDateTime dateTime = LocalDateTime.parse(parts[4], DATE_TIME_FORMATTER);
-        String description = parts[5];
+        // Description is empty for new format, use empty string if not present
+        String description = (parts.length > 5) ? parts[5] : "";
 
-        switch (category) {
-            case "Food":
-                if (parts.length >= 8) {
-                    return new FoodExpense(expenseId, userId, amount, description, dateTime, parts[6], parts[7]);
-                }
-                break;
-            case "Travel":
-                if (parts.length >= 9) {
-                    return new TravelExpense(expenseId, userId, amount, description, dateTime, 
-                            parts[6], parts[7], Double.parseDouble(parts[8]));
-                }
-                break;
-            case "Electricity":
-                if (parts.length >= 9) {
-                    return new ElectricityExpense(expenseId, userId, amount, description, dateTime, 
-                            parts[6], Double.parseDouble(parts[7]), parts[8]);
-                }
-                break;
-        }
-        
-        return null;
+        // All expenses are now SimpleExpense
+        return new org.example.model.SimpleExpense(expenseId, userId, category, amount, dateTime, description);
     }
 
     public void saveAllExpenses(String csvId, List<Expense> expenses) throws IOException {
@@ -114,7 +97,7 @@ public class ExpenseFileService {
              BufferedWriter bw = new BufferedWriter(writer)) {
             
             // Write header
-            bw.write("ExpenseID,UserID,Category,Amount,DateTime,Description,AdditionalInfo");
+            bw.write("ExpenseID,UserID,Category,Amount,DateTime");
             bw.newLine();
             
             // Write all expenses
