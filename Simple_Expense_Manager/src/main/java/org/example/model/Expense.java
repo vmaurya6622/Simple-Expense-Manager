@@ -1,0 +1,134 @@
+package org.example.model;
+
+import org.example.interfaces.Exportable;
+import org.example.interfaces.Validatable;
+import org.example.exception.ValidationException;
+
+import java.time.LocalDateTime;
+import java.util.Objects;
+
+public abstract class Expense implements Validatable, Exportable {
+    protected String expenseId;
+    protected String userId;
+    protected String category;
+    protected double amount;
+    protected LocalDateTime dateTime;
+    protected String description;
+
+    public Expense(String userId, String category, double amount, String description) throws ValidationException {
+        this.expenseId = generateExpenseId();
+        this.userId = userId;
+        this.category = category;
+        this.amount = amount;
+        this.dateTime = LocalDateTime.now();
+        this.description = description;
+        validate();
+    }
+
+    public Expense(String expenseId, String userId, String category, double amount, LocalDateTime dateTime, String description) throws ValidationException {
+        this.expenseId = expenseId;
+        this.userId = userId;
+        this.category = category;
+        this.amount = amount;
+        this.dateTime = dateTime;
+        this.description = description;
+        validate();
+    }
+
+    private String generateExpenseId() {
+        return "EXP_" + System.currentTimeMillis() + "_" + (int)(Math.random() * 1000);
+    }
+
+    @Override
+    public void validate() throws ValidationException {
+        if (userId == null || userId.trim().isEmpty()) {
+            throw new ValidationException("User ID cannot be empty");
+        }
+        if (category == null || category.trim().isEmpty()) {
+            throw new ValidationException("Category cannot be empty");
+        }
+        if (amount <= 0) {
+            throw new ValidationException("Amount must be greater than 0");
+        }
+        if (amount > 1000000) {
+            throw new ValidationException("Amount cannot exceed 1,000,000");
+        }
+        if (description == null || description.trim().isEmpty()) {
+            throw new ValidationException("Description cannot be empty");
+        }
+        if (description.length() > 500) {
+            throw new ValidationException("Description cannot exceed 500 characters");
+        }
+    }
+
+    @Override
+    public String toCSV() {
+        return String.format("%s,%s,%s,%.2f,%s,%s",
+                expenseId, userId, category, amount, 
+                dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")), 
+                description);
+    }
+
+    @Override
+    public String toFormattedString() {
+        return String.format("Expense ID: %s | Category: %s | Amount: $%.2f | Date: %s | Description: %s",
+                expenseId, category, amount, dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")), description);
+    }
+
+    // Getters and Setters
+    public String getExpenseId() {
+        return expenseId;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public double getAmount() {
+        return amount;
+    }
+
+    public void setAmount(double amount) throws ValidationException {
+        this.amount = amount;
+        validate();
+    }
+
+    public LocalDateTime getDateTime() {
+        return dateTime;
+    }
+
+    public void setDateTime(LocalDateTime dateTime) {
+        this.dateTime = dateTime;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) throws ValidationException {
+        this.description = description;
+        validate();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Expense expense = (Expense) o;
+        return Objects.equals(expenseId, expense.expenseId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(expenseId);
+    }
+
+    @Override
+    public String toString() {
+        return toFormattedString();
+    }
+}
