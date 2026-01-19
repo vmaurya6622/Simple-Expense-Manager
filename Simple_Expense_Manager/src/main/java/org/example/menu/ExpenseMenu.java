@@ -78,6 +78,37 @@ public class ExpenseMenu {
         }
     }
 
+    private LocalDate getUpdatedDateFromUser() {
+        while (true) {
+            System.out.println("Choose date option:");
+            System.out.println("1. Use current date");
+            System.out.println("2. Enter custom date (yyyy-MM-dd)");
+            System.out.print("Enter choice: ");
+
+            String choice = scanner.nextLine().trim();
+
+            if (choice.equals("1")) {
+                return LocalDate.now();
+            }
+
+            if (choice.equals("2")) {
+                System.out.print("Enter date (yyyy-MM-dd): ");
+                String input = scanner.nextLine().trim();
+
+                try {
+                    return LocalDate.parse(
+                            input,
+                            DateTimeFormatter.ISO_LOCAL_DATE
+                    );
+                } catch (DateTimeParseException e) {
+                    System.out.println("Invalid date format. Try again.");
+                }
+            } else {
+                System.out.println("Invalid choice. Please select 1 or 2.");
+            }
+        }
+    }
+
     private void handleAddExpense() {
         System.out.println("\n--- ADD EXPENSE ---");
         System.out.println("Select category:");
@@ -177,41 +208,69 @@ public class ExpenseMenu {
         String expenseId = scanner.nextLine().trim();
 
         try {
-            Expense existingExpense = expenseRepository.getExpenseById(expenseId);
+            Expense existing = expenseRepository.getExpenseById(expenseId);
 
-            if (!existingExpense.getUserId().equals(currentUser.getUserId())) {
+            if (!existing.getUserId().equals(currentUser.getUserId())) {
                 System.out.println("Error: You can only update your own expenses!");
                 return;
             }
 
-            System.out.println("Current expense details:");
-            System.out.println(existingExpense.toFormattedString());
-            System.out.println("\nEnter new details:");
+            System.out.println("\nCurrent expense details:");
+            System.out.println(existing.toFormattedString());
 
-            System.out.print("Enter new amount (press Enter to keep current): ");
-            String amountInput = scanner.nextLine().trim();
-            double amount = amountInput.isEmpty() ? existingExpense.getAmount() : Double.parseDouble(amountInput);
+            /* ================= UPDATE AMOUNT ================= */
 
-            // Create updated expense with same category but new amount (description is always empty)
-            Expense updatedExpense = new org.example.model.SimpleExpense(
-                    existingExpense.getExpenseId(),
-                    existingExpense.getUserId(),
-                    existingExpense.getCategory(),
+            double amount = existing.getAmount();
+            System.out.print("\nUpdate amount? (y/n): ");
+            if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+                System.out.print("Enter new amount: ");
+                amount = Double.parseDouble(scanner.nextLine().trim());
+            }
+
+            /* ================= UPDATE CATEGORY ================= */
+
+            String category = existing.getCategory();
+            System.out.print("\nUpdate category? (y/n): ");
+            if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+                System.out.println("1. Food\n2. Travel\n3. Electricity\n4. Miscellaneous");
+                System.out.print("Enter new category choice: ");
+
+                category = switch (scanner.nextLine().trim()) {
+                    case "1" -> "Food";
+                    case "2" -> "Travel";
+                    case "3" -> "Electricity";
+                    case "4" -> "Miscellaneous";
+                    default -> throw new ValidationException("Invalid category choice");
+                };
+            }
+
+            /* ================= UPDATE DATE ================= */
+
+            LocalDate date = existing.getDate();
+            System.out.print("\nUpdate date? (y/n): ");
+            if (scanner.nextLine().trim().equalsIgnoreCase("y")) {
+                date = getUpdatedDateFromUser();
+            }
+
+            Expense updatedExpense = new SimpleExpense(
+                    existing.getExpenseId(),
+                    existing.getUserId(),
+                    category,
                     amount,
-                    existingExpense.getDateTime()
+                    date
             );
 
             expenseRepository.updateExpense(expenseId, updatedExpense);
-            System.out.println("Expense updated successfully!");
+
+            System.out.println("\nExpense updated successfully!");
             System.out.println(updatedExpense.toFormattedString());
-        } catch (ExpenseNotFoundException | IOException e) {
+
+        } catch (ExpenseNotFoundException | IOException |
+                 ValidationException | NumberFormatException e) {
             System.out.println("Error: " + e.getMessage());
-        } catch (NumberFormatException e) {
-            System.out.println("Invalid input! Please enter a valid number.");
-        } catch (ValidationException e) {
-            System.out.println("Validation Error: " + e.getMessage());
         }
     }
+
 
 
     private void handleViewAllExpenses() {
