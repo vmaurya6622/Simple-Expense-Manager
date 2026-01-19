@@ -20,10 +20,10 @@ public class Main {
         System.out.println("========================================");
 
         while (true) {
-            UserMenu userMenu = new UserMenu(scanner, userStorageService);
+            UserMenu userMenu  = new UserMenu(scanner, userStorageService);
             User currentUser = userMenu.displayMenu();
 
-            if (currentUser != null) {
+            if (currentUser != null ) {
                 ExpenseRepository expenseRepository = new ExpenseRepository(
                         expenseFileService, 
                         currentUser.getCsvId(), 
