@@ -32,7 +32,7 @@ public class ExpenseMenu {
             System.out.println("2. Update Expense");
             System.out.println("3. View All Expenses");
             System.out.println("4. View Expenses by Category");
-            System.out.println("5. View Expenses by Date");
+            System.out.println("5. View Expenses by Duration");
             System.out.println("6. Export Expenses to File");
             System.out.println("7. View Summary");
             System.out.println("8. Logout");
@@ -115,6 +115,27 @@ public class ExpenseMenu {
                 default:
                     System.out.println("Invalid category choice!");
                     return;
+            }
+
+            //Inputting date for inclusion of datetime
+            System.out.println("Choose date option:");
+            System.out.println("1. Use current date & time");
+            System.out.println("2. Enter custom date (ddMMyyyy)");
+            System.out.print("Enter choice: ");
+
+            int dateChoice = Integer.parseInt(scanner.nextLine().trim());
+            LocalDate date;
+
+            if (dateChoice == 1) {
+                date = LocalDate.now();
+            } else if (dateChoice == 2) {
+                System.out.print("Enter date (ddMMyyyy): ");
+                String dateInput = scanner.nextLine().trim();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy");
+                date = LocalDate.parse(dateInput, formatter);
+            } else {
+                System.out.println("Invalid date option!");
+                return;
             }
             
             expense = createSimpleExpense(category, amount);
