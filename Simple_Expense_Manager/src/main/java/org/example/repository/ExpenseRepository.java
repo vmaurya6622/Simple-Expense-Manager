@@ -60,7 +60,7 @@ public class ExpenseRepository {
     public List<Expense> getExpensesByDate(LocalDate date) {
         try {
             return getAllExpensesInternal().stream()
-                    .filter(e -> e.getDateTime().toLocalDate().equals(date))
+                    .filter(e -> e.getDate().equals(date))
                     .collect(Collectors.toList());
         } catch (IOException e) {
             System.err.println("Error loading expenses: " + e.getMessage());

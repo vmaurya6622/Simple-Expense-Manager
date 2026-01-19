@@ -4,6 +4,7 @@ import org.example.interfaces.Exportable;
 import org.example.interfaces.Validatable;
 import org.example.exception.ValidationException;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -12,26 +13,26 @@ public abstract class Expense implements Validatable, Exportable {
     protected String userId;
     protected String category;
     protected double amount;
-    protected LocalDateTime dateTime;
+    protected LocalDate dateTime;
     protected String description;
 
-    public Expense(String userId, String category, double amount, String description) throws ValidationException {
+    public Expense(String userId, String category, double amount, LocalDate date) throws ValidationException {
         this.expenseId = generateExpenseId();
         this.userId = userId;
         this.category = category;
         this.amount = amount;
-        this.dateTime = LocalDateTime.now();
-        this.description = (description == null) ? "" : description;
+        this.dateTime = date;
+//        this.description = (description == null) ? "" : description;
         validate();
     }
 
-    public Expense(String expenseId, String userId, String category, double amount, LocalDateTime dateTime, String description) throws ValidationException {
+    public Expense(String expenseId, String userId, String category, double amount, LocalDate date) throws ValidationException {
         this.expenseId = expenseId;
         this.userId = userId;
         this.category = category;
         this.amount = amount;
-        this.dateTime = dateTime;
-        this.description = (description == null) ? "" : description;
+        this.dateTime = date;
+//        this.description = (description == null) ? "" : description;
         validate();
     }
 
@@ -62,14 +63,14 @@ public abstract class Expense implements Validatable, Exportable {
     @Override
     public String toCSV() {
         return String.format("%s,%s,%s,%.2f,%s",
-                expenseId, userId, category, amount, 
-                dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                expenseId, userId, category, amount,
+                dateTime.toString());
     }
 
     @Override
     public String toFormattedString() {
         return String.format("Expense ID: %s | Category: %s | Amount: $%.2f | Date: %s",
-                expenseId, category, amount, dateTime.format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
+                expenseId, category, amount, dateTime.toString());
     }
 
     // Getters and Setters
@@ -94,11 +95,11 @@ public abstract class Expense implements Validatable, Exportable {
         validate();
     }
 
-    public LocalDateTime getDateTime() {
+    public LocalDate getDateTime() {
         return dateTime;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public void setDateTime(LocalDate dateTime) {
         this.dateTime = dateTime;
     }
 
@@ -119,5 +120,9 @@ public abstract class Expense implements Validatable, Exportable {
     @Override
     public String toString() {
         return toFormattedString();
+    }
+
+    public LocalDate getDate() {
+        return dateTime;
     }
 }

@@ -9,6 +9,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -29,7 +30,7 @@ public class ExpenseMenu {
         while (true) {
             System.out.println("\n========== EXPENSE MANAGEMENT ==========");
             System.out.println("1. Add Expense");
-            System.out.println("2. Update Expense");
+            System.out.println("2. Update Expense Amount by Exp. ID");
             System.out.println("3. View All Expenses");
             System.out.println("4. View Expenses by Category");
             System.out.println("5. View Expenses by Duration");
@@ -116,29 +117,43 @@ public class ExpenseMenu {
                     System.out.println("Invalid category choice!");
                     return;
             }
-
-            //Inputting date for inclusion of datetime
             System.out.println("Choose date option:");
-            System.out.println("1. Use current date & time");
-            System.out.println("2. Enter custom date (ddMMyyyy)");
+            System.out.println("1. Use current date");
+            System.out.println("2. Enter custom date (yyyy-MM-dd)");
             System.out.print("Enter choice: ");
 
-            int dateChoice = Integer.parseInt(scanner.nextLine().trim());
             LocalDate date;
 
-            if (dateChoice == 1) {
-                date = LocalDate.now();
-            } else if (dateChoice == 2) {
-                System.out.print("Enter date (ddMMyyyy): ");
-                String dateInput = scanner.nextLine().trim();
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("ddMMyyyy");
-                date = LocalDate.parse(dateInput, formatter);
-            } else {
-                System.out.println("Invalid date option!");
-                return;
+            try {
+                int dateChoice = Integer.parseInt(scanner.nextLine().trim());
+
+                if (dateChoice == 1) {
+                    date = LocalDate.now();
+                }
+                else if (dateChoice == 2) {
+                    System.out.print("Enter date (yyyy-MM-dd): ");
+                    String dateInput = scanner.nextLine().trim();
+
+                    try {
+                        date = LocalDate.parse(
+                                dateInput,
+                                DateTimeFormatter.ISO_LOCAL_DATE
+                        );
+                    } catch (DateTimeParseException e) {
+                        System.out.println("Invalid date format! Please use yyyy-MM-dd.");
+                        return;
+                    }
+                }
+                else {
+                    System.out.println("Invalid date option! Please select 1 or 2.");
+                    return;
+                }
+
+                expense = createSimpleExpense(category, amount, date);
+
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid input! Please enter a numeric choice.");
             }
-            
-            expense = createSimpleExpense(category, amount);
 
             if (expense != null) {
                 expenseRepository.addExpense(expense);
@@ -152,8 +167,8 @@ public class ExpenseMenu {
         }
     }
 
-    private Expense createSimpleExpense(String category, double amount) throws ValidationException {
-        return new org.example.model.SimpleExpense(currentUser.getUserId(), category, amount, "");
+    private Expense createSimpleExpense(String category, double amount, LocalDate date) throws ValidationException {
+        return new org.example.model.SimpleExpense(currentUser.getUserId(), category, amount, date);
     }
 
     private void handleUpdateExpense() {
@@ -163,7 +178,7 @@ public class ExpenseMenu {
 
         try {
             Expense existingExpense = expenseRepository.getExpenseById(expenseId);
-            
+
             if (!existingExpense.getUserId().equals(currentUser.getUserId())) {
                 System.out.println("Error: You can only update your own expenses!");
                 return;
@@ -183,8 +198,7 @@ public class ExpenseMenu {
                     existingExpense.getUserId(),
                     existingExpense.getCategory(),
                     amount,
-                    existingExpense.getDateTime(),
-                    ""
+                    existingExpense.getDateTime()
             );
 
             expenseRepository.updateExpense(expenseId, updatedExpense);
@@ -203,7 +217,7 @@ public class ExpenseMenu {
     private void handleViewAllExpenses() {
         System.out.println("\n--- ALL EXPENSES ---");
         List<Expense> expenses = expenseRepository.getAllExpenses();
-        
+
         if (expenses.isEmpty()) {
             System.out.println("No expenses found.");
         } else {
@@ -245,7 +259,7 @@ public class ExpenseMenu {
             }
 
             List<Expense> expenses = expenseRepository.getExpensesByCategory(category);
-            
+
             if (expenses.isEmpty()) {
                 System.out.println("No expenses found for category: " + category);
             } else {
@@ -259,40 +273,73 @@ public class ExpenseMenu {
     }
 
     private void handleViewExpensesByDate() {
-        System.out.println("\n--- EXPENSES BY DATE ---");
-        System.out.print("Enter date (yyyy-MM-dd): ");
-        String dateStr = scanner.nextLine().trim();
+        System.out.println("\n--- EXPENSES BY DATE RANGE ---");
 
         try {
-            LocalDate date = LocalDate.parse(dateStr, DateTimeFormatter.ISO_LOCAL_DATE);
-            List<Expense> expenses = expenseRepository.getExpensesByDate(date);
-            
-            if (expenses.isEmpty()) {
-                System.out.println("No expenses found for date: " + date);
-            } else {
-                expenses.forEach(expense -> System.out.println(expense.toFormattedString()));
-                double total = expenses.stream().mapToDouble(Expense::getAmount).sum();
-                System.out.println("\nTotal for " + date + ": $" + String.format("%.2f", total));
+            System.out.print("Enter start date (yyyy-MM-dd): ");
+            String startInput = scanner.nextLine().trim();
+
+            System.out.print("Enter end date (yyyy-MM-dd): ");
+            String endInput = scanner.nextLine().trim();
+
+            LocalDate startDate = LocalDate.parse(
+                    startInput, DateTimeFormatter.ISO_LOCAL_DATE);
+
+            LocalDate endDate = LocalDate.parse(
+                    endInput, DateTimeFormatter.ISO_LOCAL_DATE);
+
+            if (startDate.isAfter(endDate)) {
+                System.out.println("Start date cannot be after end date.");
+                return;
             }
+
+            List<Expense> expenses =
+                    expenseRepository.getAllExpenses().stream()
+                            .filter(e ->
+                                    !e.getDate().isBefore(startDate) &&
+                                            !e.getDate().isAfter(endDate))
+                            .toList();
+
+            if (expenses.isEmpty()) {
+                System.out.println("No expenses found between "
+                        + startDate + " and " + endDate);
+                return;
+            }
+
+            System.out.println("\nExpenses from " + startDate + " to " + endDate + ":");
+            expenses.forEach(e ->
+                    System.out.println(e.toFormattedString()));
+
+            double total = expenses.stream()
+                    .mapToDouble(Expense::getAmount)
+                    .sum();
+
+            System.out.println("\nSummary:");
+            System.out.println("Total Expenses: $" + String.format("%.2f", total));
+
         } catch (DateTimeParseException e) {
-            System.out.println("Invalid date format! Please use yyyy-MM-dd format.");
+            System.out.println("Invalid date format! Please use yyyy-MM-dd.");
         }
     }
+
+
+
+
 
     private void handleExportToFile() {
         System.out.println("\n--- EXPORT EXPENSES TO FILE ---");
         System.out.print("Enter filename (without extension): ");
         String filename = scanner.nextLine().trim();
-        
+
         if (filename.isEmpty()) {
             filename = currentUser.getName() + "_expenses_" + System.currentTimeMillis();
         }
-        
+
         filename += ".csv";
 
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
             List<Expense> expenses = expenseRepository.getAllExpenses();
-            
+
             if (expenses.isEmpty()) {
                 System.out.println("No expenses to export.");
                 return;
@@ -314,10 +361,10 @@ public class ExpenseMenu {
         System.out.println("\n--- EXPENSE SUMMARY ---");
         double totalExpenses = expenseRepository.getTotalExpenses();
         List<String> categories = expenseRepository.getAvailableCategories();
-        
+
         System.out.println("Total Expenses: $" + String.format("%.2f", totalExpenses));
         System.out.println("\nBreakdown by Category:");
-        
+
         categories.forEach(category -> {
             double categoryTotal = expenseRepository.getTotalExpensesByCategory(category);
             double percentage = totalExpenses > 0 ? (categoryTotal / totalExpenses) * 100 : 0;

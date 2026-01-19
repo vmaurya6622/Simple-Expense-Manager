@@ -5,14 +5,15 @@ import org.example.exception.ExpenseNotFoundException;
 import org.example.exception.ValidationException;
 
 import java.io.*;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class ExpenseFileService {
     private static final String EXPENSES_DIR = "expenses";
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
 
     public ExpenseFileService() {
         // Create expenses directory if it doesn't exist
@@ -82,12 +83,12 @@ public class ExpenseFileService {
         String expenseId = parts[0];
         String category = parts[2];
         double amount = Double.parseDouble(parts[3]);
-        LocalDateTime dateTime = LocalDateTime.parse(parts[4], DATE_TIME_FORMATTER);
+        LocalDate dateTime = LocalDate.parse(parts[4], DATE_TIME_FORMATTER);
         // Description is empty for new format, use empty string if not present
         String description = (parts.length > 5) ? parts[5] : "";
 
         // All expenses are now SimpleExpense
-        return new org.example.model.SimpleExpense(expenseId, userId, category, amount, dateTime, description);
+        return new org.example.model.SimpleExpense(expenseId, userId, category, amount, dateTime);
     }
 
     public void saveAllExpenses(String csvId, List<Expense> expenses) throws IOException {
